@@ -84,7 +84,20 @@ router.put("/:id", async (req, res, next) => {
        3. Update with partial body
        4. Return updated JSON
     */
+    const product = await Product.findByPk(req.params.id);
+    
+  if (!product) {
+    return res.status(404).json({ error: "Product not found" });
+  }
+  const updatedProduct = await product.update(req.body);
+  res.json(updatedProduct)
   } catch (error) {
+    if (error.name === 'SequelizeValidationError') {
+      return res.status(400).json({
+        error: "Validation error",
+        details: error.errors.map(e => e.message)
+      });
+    }
     next(error);
   }
 });
