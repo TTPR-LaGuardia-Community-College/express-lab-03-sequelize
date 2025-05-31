@@ -12,6 +12,8 @@ router.get("/", async (_req, res, next) => {
        1. Fetch all products
        2. Return JSON array
     */
+  const products = await Product.findAll();
+  res.json(products);
   } catch (error) {
     next(error);
   }
@@ -27,6 +29,13 @@ router.get("/:id", async (req, res, next) => {
        2. 404 if not found
        3. Return product JSON
     */
+  const product = await Product.findByPk(req.params.id);
+    
+  if (!product) {
+    return res.status(404).json({ error: "Product not found" });
+  }
+  res.json(product);
+
   } catch (error) {
     next(error);
   }
@@ -45,7 +54,21 @@ router.post("/", async (req, res, next) => {
        3. Return 201 + created product
        4. 400 on validation errors
     */
+  const { name, price, stock } = req.body;
+  if (!name || price === undefined) {
+    return res.status(400).json({
+      error: "Missing required fields: name and price are required"
+    })
+  }
+  const product = await Product.create({ name, price, stock});
+  res.status(201).json(product);
   } catch (error) {
+    if (error.name === 'SequelizeValidationError') {
+      return res.status(400).json({
+        error: "Validation error",
+        details: error.errors.map(e => e.message)
+      });
+    }
     next(error);
   }
 });
@@ -61,7 +84,20 @@ router.put("/:id", async (req, res, next) => {
        3. Update with partial body
        4. Return updated JSON
     */
+    const product = await Product.findByPk(req.params.id);
+    
+  if (!product) {
+    return res.status(404).json({ error: "Product not found" });
+  }
+  const updatedProduct = await product.update(req.body);
+  res.json(updatedProduct)
   } catch (error) {
+    if (error.name === 'SequelizeValidationError') {
+      return res.status(400).json({
+        error: "Validation error",
+        details: error.errors.map(e => e.message)
+      });
+    }
     next(error);
   }
 });
@@ -76,6 +112,12 @@ router.delete("/:id", async (req, res, next) => {
        2. 404 if not found
        3. Return 204 No Content
     */
+  const product = await Product.findByPk(req.params.id);
+  if (!product) {
+    return res.status(404).json({error: "Product not found"});
+  }
+  await product.destroy();
+  res.status(204).send();
   } catch (error) {
     next(error);
   }
