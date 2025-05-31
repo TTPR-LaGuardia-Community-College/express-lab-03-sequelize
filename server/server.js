@@ -31,7 +31,7 @@ const init = async () => {
     await order.addProducts([1, 2]);
 
     console.log("Database seeded!");
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    app.listen(PORT, () => console.log(`Server running on port http://localhost:${PORT}`));
   } catch (error) {
     console.error("Error initializing:", error);
   }
