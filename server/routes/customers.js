@@ -11,6 +11,13 @@ router.get("/", async (_req, res, next) => {
        2. Include Orders (+ Products) for eager‑loading practice
        3. Return JSON array
     */
+   const customers = await Customer.findAll({
+    include: [{
+      model: Order,
+      include: [Product]
+    }]
+   });
+   res.json(customers);
   } catch (error) {
     next(error);
   }
