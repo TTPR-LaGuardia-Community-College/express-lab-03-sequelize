@@ -167,7 +167,20 @@ router.put("/:id", async (req, res, next) => {
     next(error);
   }
 });
-
+router.delete("/:id", async (req, res, next) => {
+  try {
+    const order = await Order.findByPk(req.params.id);
+    
+    if (!order) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+    
+    await order.destroy();
+    res.status(204).send(); // No Content
+  } catch (error) {
+    next(error);
+  }
+});
 /* --------------------------------------------------------------------------
    TODO: Add the rest of the CRUD routes
 
