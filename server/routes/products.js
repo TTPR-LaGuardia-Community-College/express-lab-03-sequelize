@@ -112,6 +112,12 @@ router.delete("/:id", async (req, res, next) => {
        2. 404 if not found
        3. Return 204 No Content
     */
+  const product = await Product.findByPk(req.params.id);
+  if (!product) {
+    return res.status(404).json({error: "Product not found"});
+  }
+  await product.destroy();
+  res.status(204).send();
   } catch (error) {
     next(error);
   }
