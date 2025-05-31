@@ -128,6 +128,46 @@ router.post("/", async (req, res, next) => {
   }
 });
 
+router.put("/:id", async (req, res, next) => {
+  try {
+    const order = await Order.findByPk(req.params.id);
+    
+    if (!order) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+    
+    // Update order fields
+    const updatedOrder = await order.update(req.body);
+    
+    // Fetch complete order with relationships
+    const completeOrder = await Order.findByPk(updatedOrder.id, {
+      include: [Customer, Product]
+    });
+    
+    // Calculate total
+    let total = 0;
+    if (completeOrder.products) {
+      total = completeOrder.products.reduce((sum, product) => {
+        const quantity = product.OrderProducts?.quantity || 1;
+        return sum + (parseFloat(product.price) * quantity);
+      }, 0);
+    }
+    
+    res.json({ 
+      ...completeOrder.toJSON(), 
+      total: parseFloat(total.toFixed(2)) 
+    });
+  } catch (error) {
+    if (error.name === 'SequelizeValidationError') {
+      return res.status(400).json({ 
+        error: "Validation error", 
+        details: error.errors.map(e => e.message) 
+      });
+    }
+    next(error);
+  }
+});
+
 /* --------------------------------------------------------------------------
    TODO: Add the rest of the CRUD routes
 
