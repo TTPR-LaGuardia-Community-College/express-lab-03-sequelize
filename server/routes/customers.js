@@ -62,7 +62,26 @@ router.post("/", async (req, res, next) => {
        3. Return 201 + created customer
        4. 400 on validation errors
     */
+   const { name, email } = req.body;
+   if (!name || !email) {
+    return res.status(400).json({
+      error: "Missing required fields: name and email are required"
+    });
+   }
+   const customer = await Customer.create({ name, email});
+   res.status(201).json(customer);
   } catch (error) {
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(409).json({
+        error: "Email already exists"
+      });
+    }
+    if (error.name === 'SequelizeValidationError') {
+      return res.status(400).json({
+        error: "Validation error",
+        details: error.errors.map(e => e.message)
+      });
+    }
     next(error);
   }
 });
