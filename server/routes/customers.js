@@ -97,7 +97,24 @@ router.put("/:id", async (req, res, next) => {
        3. Update fields (partial)
        4. Return updated JSON
     */
+   const customer = await Customer.findByPk(req.params.id);
+   if (!customer) {
+    return res.status(404).json({error:"Customer not found"});
+   }
+   const updatedCustomer = await customer.update(req.body);
+   res.json(updatedCustomer)
   } catch (error) {
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(409).json({
+        error: "Email already exists"
+      });
+    }
+    if (error.name === 'SequelizeValidationError') {
+      return res.status(400).json({
+        error: "Validation error",
+        details: error.errors.map(e => e.message)
+      });
+    }
     next(error);
   }
 });
