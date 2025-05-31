@@ -44,11 +44,86 @@ router.get("/:id", async (req, res, next) => {
        4. Calculate total price (sum of line items)
        5. Return order JSON + total
     */
-    // const order = await Order.findByPk(...)
-    // let total = 0;
-    // ...calculate total here...
-    // res.json({ ...order.toJSON(), total });
+    const order = await Order.findByPk(req.params.id, {
+      include: [
+        Customer,
+        Product
+      ]
+    });
+    if (!order) {
+      return res.status(404).json({error:"Order not found"})
+    }
+    let total = 0;
+    if (order.products) {
+      total = order.products.reduce((sum, product) => {
+        const quantity = product.Orderproducts?.quantity || 1;
+        return sum + (parseFloat(product.price)*quantity);
+      }, 0);
+    }
+    res.json({ ...order.toJSON(), total: parseFloat(total.toFixed(2)) });
   } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/", async (req, res, next) => {
+  try {
+    const { customerId, products } = req.body;
+    
+    // Validate required fields
+    if (!customerId || !products || !Array.isArray(products)) {
+      return res.status(400).json({ 
+        error: "Missing required fields: customerId and products array are required" 
+      });
+    }
+    
+    // Verify customer exists
+    const customer = await Customer.findByPk(customerId);
+    if (!customer) {
+      return res.status(404).json({ error: "Customer not found" });
+    }
+    
+    // Create the order
+    const order = await Order.create({ 
+      customerId,
+      status: "pending" 
+    });
+    
+    // Add products to order with quantities
+    for (const productItem of products) {
+      const product = await Product.findByPk(productItem.id);
+      if (product) {
+        await order.addProduct(product, { 
+          through: { quantity: productItem.qty || 1 } 
+        });
+      }
+    }
+    
+    // Fetch the complete order with products for response
+    const completeOrder = await Order.findByPk(order.id, {
+      include: [Product]
+    });
+    
+    // Calculate total
+    let total = 0;
+    if (completeOrder.products) {
+      total = completeOrder.products.reduce((sum, product) => {
+        const quantity = product.OrderProducts?.quantity || 1;
+        return sum + (parseFloat(product.price) * quantity);
+      }, 0);
+    }
+    
+    res.status(201).json({ 
+      ...completeOrder.toJSON(), 
+      total: parseFloat(total.toFixed(2)) 
+    });
+  } catch (error) {
+    if (error.name === 'SequelizeValidationError') {
+      return res.status(400).json({ 
+        error: "Validation error", 
+        details: error.errors.map(e => e.message) 
+      });
+    }
     next(error);
   }
 });
