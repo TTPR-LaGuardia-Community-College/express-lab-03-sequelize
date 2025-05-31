@@ -2,6 +2,35 @@ const router = require("express").Router();
 const { Order, Product, Customer } = require("../db");
 
 /* =========================================================================
+   GET /api/orders
+   -------------------------------------------------------------------------
+   List all orders with customer and products (eager-loaded)
+   ========================================================================= */
+router.get("/", async (req, res, next) => {
+  try {
+    const orders = await Order.findAll ({
+      include: [
+        Customer,
+        Product
+      ]
+    });
+    const ordersWithTotal = orders.map(order =>{
+      const orderJSON = order.toJSON();
+      let total = 0;
+
+      if (orderJSON.products) {
+        total = orderJSON.products.reduce((sum,products) => {
+          const quantity = products.Orderproducts?.quantity || 1;
+          return sum + (parseFloat(products.price)*quantity);
+        }, 0);
+      }
+      return {...orderJSON, total: parseFloat(total.toFixed(2))};
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+/* =========================================================================
    GET /api/orders/:id
    -------------------------------------------------------------------------
    Return a single order, its customer, and its products.
