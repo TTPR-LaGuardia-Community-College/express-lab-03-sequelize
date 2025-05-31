@@ -8,10 +8,22 @@ const customersRouter = require("./routes/customers");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.get("/", (req, res) => {
+  res.json({
+    message: "Welcome to Express Lab 3 - E-commerce API",
+    endpoints: {
+      customers: "GET /api/customers",
+      products: "GET /api/products", 
+      orders: "GET /api/orders"
+    }
+  });
+});
+
 app.use(express.json());
 app.use("/api/orders", ordersRouter);
 app.use("/api/products", productsRouter);
 app.use("/api/customers", customersRouter);
+
 
 const init = async () => {
   try {
