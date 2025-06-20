@@ -7,9 +7,13 @@
 const { Sequelize } = require("sequelize");
 require("dotenv").config(); // loads .env into process.env
 
-const db = new Sequelize(
-  process.env.DATABASE_URL || "postgres://localhost:5432/ecommerce-lab3",
-  { logging: false }
-);
+const db = new Sequelize({
+  password: process.env.PG_PASSWORD,
+  logging:false,
+  dialect:"postgres",
+  database: process.env.PG_DATABASE,
+  username: "postgres"
+})
+
 
 module.exports = db;
